@@ -83,7 +83,6 @@ def convert_to_screenplay(screenplay_content, api_key):
     """
     
     try:
-        # Call the OpenAI GPT API to format the screenplay
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -123,7 +122,6 @@ For a while it seemed that they wouldn't even hear the wedding, let alone see it
         return None
 
 
-# Test with provided content
 play = '''<heading>INT. VAN - DAY</heading>
 <sub-heading>INSIDE THE VAN</sub-heading>
 <shot>Camera zooms in on Adejo's face.</shot>
