@@ -121,6 +121,29 @@ For a while it seemed that they wouldn't even hear the wedding, let alone see it
         print(f"Could not generate analysis: {e}")
         return None
 
+def summarize_screenplay(screenplay_content,api_key):
+    client = OpenAI(
+        api_key= api_key
+    )
+
+    system_prompt = f"""You are a professional screenwriter and a screenplay critic. Summarize the given screenplay."""
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": screenplay_content}
+            ],
+            model="gpt-4", 
+            temperature=0.3,
+            max_tokens=100
+        )
+
+        response = chat_completion.choices[0].message.content.strip()
+        return json.dumps(response)
+        
+    except Exception as e:
+        print(f"Could not generate analysis: {e}")
+        return None
 
 play = '''<heading>INT. VAN - DAY</heading>
 <sub-heading>INSIDE THE VAN</sub-heading>
