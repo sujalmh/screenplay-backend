@@ -2,17 +2,16 @@ from openai import OpenAI
 import json
 import re
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-client = OpenAI(
-    api_key= os.environ.get("API_KEY")
-)
 
 
 
-def rate_screenplay(screenplay_content):
+
+
+def rate_screenplay(screenplay_content, api_key):
+    client = OpenAI(
+        api_key= api_key
+    )
+
     system_prompt = f"""You are a professional screenwriter and a screenplay critic. Your response should be based on the following:
                     Plot, Character Development, Dialogue, Originality, and Theme. Rate each criterion out of 10 in the format:
                     Plot: [score]
@@ -66,7 +65,10 @@ Silence hung in the air as he weighed her words.
 
 '''
 
-def analyze_screenplay(screenplay_content):
+def convert_to_screenplay(screenplay_content, api_key):
+    client = OpenAI(
+        api_key= api_key
+    )
     system_prompt = """Format the following text into screenplay format:
     
     Use the following format:

@@ -1,12 +1,16 @@
 from flask import Flask, request, jsonify
 from models import db, Story, Scene, SceneVersion
 from datetime import datetime
-from ai import rate_screenplay 
+from ai import rate_screenplay, convert_to_screenplay
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 # Initialize the Flask app and configure the database
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stories.db'  # Example SQLite DB
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['API_KEY'] = os.environ.get("API_KEY")
 
 # Initialize SQLAlchemy with the app
 db.init_app(app)
@@ -75,6 +79,15 @@ def edit_scene(scene_id):
     db.session.commit()
 
     return jsonify({'message': 'Scene updated successfully', 'scene': {'id': scene.id, 'title': scene.title, 'content': scene.content}}), 200
+
+@app.route('/api/convert_to_screenplay', methods=['POST'])
+def convert_to_screenplay_route():
+    data = request.get_json()
+
+    # Extract scene title and content from the request data
+    text_content = data.get('text-content')
+    screenplay = convert_to_screenplay(text_content, app.config['API_KEY'])
+    return jsonify({'screenplay': screenplay})
 
 # Run the Flask app
 if __name__ == '__main__':
