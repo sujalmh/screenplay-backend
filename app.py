@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+from flask_migrate import Migrate
 from models import db, Story, Scene, SceneVersion
 from datetime import datetime
 from ai import rate_screenplay, convert_to_screenplay
@@ -7,14 +9,16 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stories.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['API_KEY'] = os.environ.get("API_KEY")
 
 db.init_app(app)
+migrate = Migrate(app, db)
 
-@app.before_first_request
-def create_tables():
+with app.app_context():
     db.create_all()
 
 @app.route('/api/stories', methods=['POST'])
