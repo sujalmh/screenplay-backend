@@ -1,10 +1,13 @@
-from flask import request, jsonify
+from flask import request, jsonify, url_for
 from openai import OpenAI
 import json
 import re
 import os
 from gtts import gTTS
 from models import db, Conversation
+import requests
+import string
+import random
 
 def clean_screenplay_text(screenplay,api_key):
     client = OpenAI(
@@ -232,19 +235,30 @@ def chatbot_chat(user_id, user_input,api_key):
     save_message(user_id,"assistant",response)
     return jsonify({"reply":response}),200
 
-def generate_image(description, api_key):
+def generate_image(description, api_key, save_directory='static/generated_images/'):
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
 
-  client =OpenAI(
-          api_key= api_key)
-  model = "dall-e-3"
-  prompt = description
+    client =OpenAI(
+            api_key= api_key)
+    model = "dall-e-3"
+    prompt = description
 
-  response = client.images.generate(
-    prompt=prompt,
-    model=model,
-    response_format="url"
-  )
-  return response.data[0].url.strip()
+    response = client.images.generate(
+        prompt=prompt,
+        model=model,
+        response_format="url"
+    )
+    res = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7))
+    image_url = response.data[0].url.strip()
+    image_data = requests.get(image_url).content
+    image_filename = "{}.jpg".format(res)
+    image_path = os.path.join(save_directory, image_filename)
+    with open(image_path, 'wb') as image_file:
+        image_file.write(image_data)
+    saved_image_url = url_for('static', filename=f'generated_images/{image_filename}', _external=True)
+
+    return saved_image_url
 
 def generate_pitch_summary(screenplay, api_key):
     client =OpenAI(
