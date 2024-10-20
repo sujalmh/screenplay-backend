@@ -13,7 +13,7 @@ from pytz import timezone
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
 app.config['JWT_SECRET_KEY'] = 'Num3R0n4u7s!Num3R0n4u7s!'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=6)
@@ -84,10 +84,11 @@ def get_scenes(story_id):
         return jsonify({"message": "User not found"}), 404
 
     scenes = Scene.query.filter_by(story_id = story_id)
+    story = db.session.get(Story, story_id)
     scenes_data = []
     for scene in scenes:
         scene_version = db.session.get(SceneVersion, scene.current_version_id) 
-        scenes_data.append({"id": scene.id, "title": scene_version.title})
+        scenes_data.append({"story_name": story.title, "id": scene.id, "title": scene_version.title})
     return jsonify({"scenes_data": scenes_data}), 201
 
 @app.route('/api/add_story', methods=['POST'])
