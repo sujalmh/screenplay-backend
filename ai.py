@@ -2,9 +2,57 @@ from openai import OpenAI
 import json
 import re
 import os
+from gtts import gTTS
+import app
 
+screenplay = """
+<heading>INT. VAN - DAY</heading>
+<sub-heading>INSIDE THE VAN</sub-heading>
+<shot>Camera zooms in on Adejo's face.</shot>
+<action>Adejo, a young boy, looks confused. His Uncle, a middle-aged man, is at the wheel.</action>
+<character>ADEJO</character>
+<parenthesis>(voiceover)</parenthesis>
+<dialogue>I still wasn't quite sure how my uncle had got caught up with the two wedding guests in the first place.</dialogue>
+<action>Adejo's Uncle turns to him, a serious look on his face.</action>
+<character>UNCLE</character>
+<dialogue>We're just going to the kitchen, to pick up the bags. We won't even see the wedding.</dialogue>
+<action>The van pulls up to a steel door. His uncle starts pressing numbers into the keypad, but the door won't open.</action>
+"""
 
+# Strip the screenplay tags to get plain text
+def clean_screenplay_text(screenplay,api_key):
+    client = OpenAI(
+        api_key= api_key
+    )
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "Convert the given screenplay text into a narration instance which can be used for text to speech."},
+                {"role": "user", "content": screenplay}
+            ],
+            model ="gpt-4o",
+            temperature= 0.1,
+            max_tokens= 100
+        )
+        response = chat_completion.choices[0].message.content.strip()
+        return response
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+    
 
+# Cleaned screenplay text
+cleaned_text = clean_screenplay_text(screenplay,app.config['API_KEY'])
+def convert_text_to_speech2(text, output_file):
+    tts = gTTS(text, lang='en')
+    tts.save(output_file)
+    print(f"Speech saved as: {output_file}")
+
+# def convert_text_to_speech(text, output_file):
+#     engine = pyttsx3.init()
+#     engine.save_to_file(text, output_file)
+#     engine.runAndWait()
+convert_text_to_speech2(cleaned_text, "C:/Users/Acer/Desktop/screenplay_audio3.mp3")
 
 
 def rate_screenplay(screenplay_content, api_key):
