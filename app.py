@@ -71,7 +71,8 @@ def get_stories():
     stories = Story.query.filter_by(user_id = current_user_id)
     scenes_data = []
     for story in stories:
-        scenes_data.append({"title": story.title, "image_link": story.image_link, "created_at": story.created_at, "updated_at": story.updated_at, "description": story.description})
+        scenes_data.append({"title": story.title, "image_link": story.image_link, "created_at": story.created_at.strftime("%Y-%m-%d %H:%M:%S")
+, "updated_at": story.updated_at, "description": story.description})
     return jsonify({"scenes_data": scenes_data}), 201
 
 @app.route('/api/story/<int:story_id>/get_scenes', methods=['GET'])
