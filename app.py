@@ -2,7 +2,7 @@ from flask import Flask, session, request, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from flask_bcrypt import Bcrypt
+from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Story, Scene, SceneVersion
 from datetime import datetime, timedelta
 from ai import rate_screenplay, convert_to_screenplay, summarize_screenplay
@@ -13,52 +13,46 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
+app.config['JWT_SECRET_KEY'] = 'Num3R0n4u7s!Num3R0n4u7s!'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=6)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stories.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['API_KEY'] = os.environ.get("API_KEY")
 
 db.init_app(app)
 migrate = Migrate(app, db)
-bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 with app.app_context():
     db.create_all()
 
-def set_password(self, password):
-    """Hash the password using Bcrypt"""
-    self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-
-def check_password(self, password):
-    """Check the hashed password"""
-    return bcrypt.check_password_hash(self.password_hash, password)
-
-
 @app.route('/register', methods=['POST'])
 def register():
-    username = request.form.get('username')
-    email = request.form.get('email')
-    password = request.form.get('password')
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
 
-    user_exists = User.query.filter((User.username == username) | (User.email == email)).first()
+    user_exists = User.query.filter((User.username == username)).first()
     if user_exists:
-        return jsonify({"msg": "User with that username or email already exists"}), 400
-   
-    user = User(username=username, email=email, password=set_password(password))
+        return jsonify({"message": "User with that username or email already exists"}), 400
+    print(password)
+    hashed_password = generate_password_hash(password)
+    user = User(username=username, password=hashed_password)
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({"msg": "User registered successfully"}), 201
+    return jsonify({"message": "User registered successfully"}), 201
 
 @app.route('/login', methods=['POST'])
 def login():
-    username = request.json.get('username')
-    password = request.json.get('password')
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
 
     user = User.query.filter_by(username=username).first()
 
-    if not user or not check_password(password):
-        return jsonify({"msg": "Invalid username or password"}), 401
+    if not user or not check_password_hash(user.password, password):
+        return jsonify({"message": "Invalid username or password"}), 401
 
     access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=1))
 
@@ -70,7 +64,7 @@ def create_story():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
-        return jsonify({"msg": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
     story_title = data.get('title')
@@ -90,7 +84,7 @@ def create_scene(story_id):
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
-        return jsonify({"msg": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
     scene_title = data.get('title')
@@ -115,7 +109,7 @@ def edit_scene(scene_id):
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
-        return jsonify({"msg": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
     scene = Scene.query.get(scene_id)
@@ -135,7 +129,7 @@ def convert_to_screenplay_route():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
-        return jsonify({"msg": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
     text_content = data.get('text-content')
@@ -148,7 +142,7 @@ def score_screenplay_route():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
-        return jsonify({"msg": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
     screenplay = data.get('screenplay')
@@ -161,7 +155,7 @@ def summarize_screenplay_route():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
-        return jsonify({"msg": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
     screenplay = data.get('screenplay')
