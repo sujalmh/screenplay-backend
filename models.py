@@ -49,8 +49,10 @@ class Scene(db.Model):
     emoji = db.Column(PickleType, nullable=True)
     emoji_name = db.Column(PickleType, nullable=True)
     sentiment_desc = db.Column(db.Text, nullable=True)
+    summary = db.Column(db.Text, nullable=True)
+    
     versions = db.relationship('SceneVersion', backref='scene', lazy=True, cascade="all, delete", foreign_keys='SceneVersion.scene_id')
-
+    
     def __repr__(self):
         return f"<Scene {self.id}>"
 

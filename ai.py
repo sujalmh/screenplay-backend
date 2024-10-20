@@ -246,5 +246,31 @@ def generate_image(description, api_key):
   )
   return response.data[0].url.strip()
 
-    
+def generate_pitch_summary(screenplay, api_key):
+    client =OpenAI(
+          api_key= api_key)
+
+    system_message = {
+        "role": "system",
+        "content":  """You are an expert screenplay analyst. Your task is to read a screenplay 
+                    and generate a concise pitch summary that highlights the core story, key characters, 
+                    and main plot points in a clear and engaging way. The summary should be suitable for pitching to producers. Use the title as the scene heading.
+                    Return the pitch as json with keys Title, Logline and Pitch summary. Do not use markdown."""
+    }
+
+    user_message = {
+        "role": "user",
+        "content": f"Screenplay:\n{screenplay}\n\nGenerate a pitch summary:"
+    }
+    print(user_message)
+    try:
+        chat_completion = client.chat.completions.create(
+            model="gpt-4o",  
+            messages=[system_message, user_message],
+            max_tokens=1500,
+            temperature=0.7,
+        ) 
+        return chat_completion.choices[0].message.content.strip()
+    except Exception as e:
+        raise Exception(f"Error generating pitch summary: {str(e)}")
     

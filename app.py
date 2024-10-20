@@ -5,7 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Story, Scene, SceneVersion, Conversation
 from datetime import datetime, timedelta
-from ai import generate_image, chatbot_chat, rate_screenplay, convert_to_screenplay, summarize_screenplay, clean_screenplay_text, convert_text_to_speech2, get_sentimental_analysis
+from ai import generate_pitch_summary, generate_image, chatbot_chat, rate_screenplay, convert_to_screenplay, summarize_screenplay, clean_screenplay_text, convert_text_to_speech2, get_sentimental_analysis
 from dotenv import load_dotenv
 import json
 import os
@@ -199,6 +199,22 @@ def edit_scene_formatted(story_id, scene_id):
         }
     }), 201
 
+@app.route('/api/get_scene_formatted/scene/<int:scene_id>', methods=['GET'])
+@jwt_required()
+def get_scene_formatted(scene_id):
+    current_user_id = get_jwt_identity()
+    user = db.session.get(User, current_user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    scene = db.session.get(Scene, scene_id)
+    scene_version = db.session.get(SceneVersion, scene.current_version_id)
+
+    return jsonify({
+        'formatted': scene_version.formatted
+    }), 201
+
+
 @app.route('/api/story/<int:story_id>/edit_scene_text/<int:scene_id>', methods=['POST'])
 @jwt_required()
 def edit_scene_text(story_id, scene_id):
@@ -355,6 +371,35 @@ def get_sentiment_analysis(scene_id):
         emojis_data.append({"emoji": scene.emoji[i], "emoji_name": scene.emoji_name[i]})  
     return jsonify({"emoji_data": emojis_data, "desc": scene.sentiment_desc})
 
+@app.route('/api/generate_summary/scene/<int:scene_id>', methods=['POST'])
+@jwt_required()
+def generate_summary_route(scene_id):
+    current_user_id = get_jwt_identity()
+    user = db.session.get(User, current_user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    scene = db.session.get(Scene, scene_id)
+    scene_version = db.session.get(SceneVersion, scene.current_version_id)
+    summary = generate_pitch_summary(scene_version.formatted, app.config['API_KEY'])
+    scene.summary = summary
+    db.session.commit()
+    print(summary)
+    return jsonify({"summary": scene.summary})
+
+@app.route('/api/get_summary/scene/<int:scene_id>', methods=['GET'])
+@jwt_required()
+def get_summary(scene_id):
+    current_user_id = get_jwt_identity()
+    user = db.session.get(User, current_user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    scene = db.session.get(Scene, scene_id)
+    summary = json.loads(scene.summary)
+    title = summary["Title"]
+    logline = summary["Logline"]
+    pitch_summary = summary["Pitch summary"]
+    return jsonify({"Title": title, "Logline": logline, "Pitch summary": pitch_summary})
+
 @app.route('/api/chat', methods=['POST'])
 @jwt_required()
 def chat():
@@ -379,6 +424,7 @@ def get_chat():
     for chat in chats:
         chats_data.append({"id": chat.id, "role": chat.role, "content": chat.content})
     return jsonify(chats_data)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
