@@ -1,9 +1,23 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask_bcrypt import Bcrypt
 
 db = SQLAlchemy()
+bcrypt = Bcrypt()  
 
-# Define the Story model
+class User(db.Model):
+    __tablename__ = 'user'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<User {self.username}>"
+
+
 class Story(db.Model):
     __tablename__ = 'story'
 
@@ -12,31 +26,28 @@ class Story(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
-    # Relationship with scenes
     scenes = db.relationship('Scene', backref='story', lazy=True, cascade="all, delete")
 
     def __repr__(self):
         return f"<Story {self.title}>"
 
-# Define the Scene model
 class Scene(db.Model):
     __tablename__ = 'scene'
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     story_id = db.Column(db.Integer, db.ForeignKey('story.id'), nullable=False)
     title = db.Column(db.String(255), nullable=False)
-    content = db.Column(db.Text, nullable=False)  # Scene content (includes setting)
+    content = db.Column(db.Text, nullable=False)
     current_version_id = db.Column(db.Integer, db.ForeignKey('scene_version.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
-    # Relationship with versions
     versions = db.relationship('SceneVersion', backref='scene', lazy=True, cascade="all, delete")
 
     def __repr__(self):
         return f"<Scene {self.title}>"
 
-# Define the SceneVersion model
 class SceneVersion(db.Model):
     __tablename__ = 'scene_version'
 

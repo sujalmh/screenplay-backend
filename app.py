@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, session, request, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
-from models import db, Story, Scene, SceneVersion
-from datetime import datetime
-from ai import rate_screenplay, convert_to_screenplay
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_bcrypt import Bcrypt
+from models import db, User, Story, Scene, SceneVersion
+from datetime import datetime, timedelta
+from ai import rate_screenplay, convert_to_screenplay, summarize_screenplay
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -17,12 +19,59 @@ app.config['API_KEY'] = os.environ.get("API_KEY")
 
 db.init_app(app)
 migrate = Migrate(app, db)
+bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
 
 with app.app_context():
     db.create_all()
 
-@app.route('/api/stories', methods=['POST'])
+def set_password(self, password):
+    """Hash the password using Bcrypt"""
+    self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+def check_password(self, password):
+    """Check the hashed password"""
+    return bcrypt.check_password_hash(self.password_hash, password)
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form.get('username')
+    email = request.form.get('email')
+    password = request.form.get('password')
+
+    user_exists = User.query.filter((User.username == username) | (User.email == email)).first()
+    if user_exists:
+        return jsonify({"msg": "User with that username or email already exists"}), 400
+   
+    user = User(username=username, email=email, password=set_password(password))
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({"msg": "User registered successfully"}), 201
+
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    user = User.query.filter_by(username=username).first()
+
+    if not user or not check_password(password):
+        return jsonify({"msg": "Invalid username or password"}), 401
+
+    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=1))
+
+    return jsonify(access_token=access_token), 200
+
+@app.route('/api/add_story', methods=['POST'])
+@jwt_required()
 def create_story():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
     data = request.get_json()
     story_title = data.get('title')
 
@@ -35,8 +84,14 @@ def create_story():
 
     return jsonify({'message': 'Story created successfully', 'story': {'id': new_story.id, 'title': new_story.title}}), 201
 
-@app.route('/api/stories/<int:story_id>/scenes', methods=['POST'])
+@app.route('/api/stories/<int:story_id>/add_scene', methods=['POST'])
+@jwt_required()
 def create_scene(story_id):
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
     data = request.get_json()
     scene_title = data.get('title')
     scene_content = data.get('content')
@@ -55,7 +110,13 @@ def create_scene(story_id):
     return jsonify({'message': 'Scene created successfully', 'scene': {'id': new_scene.id, 'title': new_scene.title, 'content': new_scene.content}}), 201
 
 @app.route('/api/scenes/<int:scene_id>', methods=['PUT', 'PATCH'])
+@jwt_required()
 def edit_scene(scene_id):
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
     data = request.get_json()
     scene = Scene.query.get(scene_id)
     if not scene:
@@ -69,18 +130,43 @@ def edit_scene(scene_id):
     return jsonify({'message': 'Scene updated successfully', 'scene': {'id': scene.id, 'title': scene.title, 'content': scene.content}}), 200
 
 @app.route('/api/convert_to_screenplay', methods=['POST'])
+@jwt_required()
 def convert_to_screenplay_route():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
     data = request.get_json()
     text_content = data.get('text-content')
     screenplay = convert_to_screenplay(text_content, app.config['API_KEY'])
     return jsonify({'screenplay': screenplay})
 
 @app.route('/api/score_screenplay', methods=['POST'])
+@jwt_required()
 def score_screenplay_route():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
     data = request.get_json()
     screenplay = data.get('screenplay')
     score = rate_screenplay(screenplay, app.config['API_KEY'])
     return score
+
+@app.route('/api/summarize_screenplay', methods=['POST'])
+@jwt_required()
+def summarize_screenplay_route():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
+    data = request.get_json()
+    screenplay = data.get('screenplay')
+    summary = summarize_screenplay(screenplay, app.config['API_KEY'])
+    return summary
 
 if __name__ == '__main__':
     app.run(debug=True)
