@@ -72,13 +72,13 @@ def create_story():
     if not story_title:
         return jsonify({'error': 'Story title is required'}), 400
 
-    new_story = Story(title=story_title)
+    new_story = Story(title=story_title, user_id=current_user_id)
     db.session.add(new_story)
     db.session.commit()
 
     return jsonify({'message': 'Story created successfully', 'story': {'id': new_story.id, 'title': new_story.title}}), 201
 
-@app.route('/api/stories/<int:story_id>/add_scene', methods=['POST'])
+@app.route('/api/story/<int:story_id>/add_scene', methods=['POST'])
 @jwt_required()
 def create_scene(story_id):
     current_user_id = get_jwt_identity()
