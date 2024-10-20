@@ -87,7 +87,7 @@ def get_scenes(story_id):
     scenes_data = []
     for scene in scenes:
         scene_version = db.session.get(SceneVersion, scene.current_version_id) 
-        scenes.append({"title": scene_version.title})
+        scenes_data.append({"title": scene_version.title})
     return jsonify({"scenes_data": scenes_data}), 201
 
 @app.route('/api/add_story', methods=['POST'])
