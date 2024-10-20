@@ -71,7 +71,7 @@ def get_stories():
     stories = Story.query.filter_by(user_id = current_user_id)
     scenes_data = []
     for story in stories:
-        scenes_data.append({"title": story.title, "image_link": story.image_link, "created_at": story.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        scenes_data.append({"id": story.id, "title": story.title, "image_link": story.image_link, "created_at": story.created_at.strftime("%Y-%m-%d %H:%M:%S")
 , "updated_at": story.updated_at, "description": story.description})
     return jsonify({"scenes_data": scenes_data}), 201
 
@@ -87,7 +87,7 @@ def get_scenes(story_id):
     scenes_data = []
     for scene in scenes:
         scene_version = db.session.get(SceneVersion, scene.current_version_id) 
-        scenes_data.append({"title": scene_version.title})
+        scenes_data.append({"id": scene.id, "title": scene_version.title})
     return jsonify({"scenes_data": scenes_data}), 201
 
 @app.route('/api/add_story', methods=['POST'])
