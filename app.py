@@ -322,7 +322,7 @@ def get_score(scene_id):
         return jsonify({"message": "User not found"}), 404
 
     scene = db.session.get(Scene, scene_id)
-    return {"scores": {"Plot": scene.plot, "Character Development": scene.character_development, "Dialogue": scene.dialogue, "Originality": scene.originality, "Theme": scene.theme}}
+    return {"scores": {"Plot": scene.plot or 0, "Character Development": scene.character_development  or 0, "Dialogue": scene.dialogue  or 0, "Originality": scene.originality  or 0, "Theme": scene.theme  or 0}}
 
 @app.route('/api/summarize_screenplay/scene/<int:scene_id>', methods=['POST'])
 @jwt_required()
