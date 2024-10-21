@@ -17,7 +17,7 @@ import random
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5173"}})
+CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "http://localhost:5173"}})
 
 app.config['JWT_SECRET_KEY'] = 'Num3R0n4u7s!Num3R0n4u7s!'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=6)
@@ -340,9 +340,9 @@ def summarize_screenplay_route(scene_id):
     summary = summarize_screenplay(screenplay, app.config['API_KEY'])
     return summary
 
-@app.route('/api/scene_to_voice', methods=['GET'])
+@app.route('/api/scene_to_voice/<int:scene_id>', methods=['POST'])
 @jwt_required()
-def scene_to_voice_route(save_directory='static/generated_audios/'):
+def scene_to_voice_route(scene_id, save_directory='static/generated_audios/'):
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
     current_user_id = get_jwt_identity()
@@ -351,7 +351,9 @@ def scene_to_voice_route(save_directory='static/generated_audios/'):
         return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
-    screenplay = data.get('screenplay')
+    scene = db.session.get(Scene, scene_id)
+    scene_version = db.session.get(Scene, scene_id)
+    screenplay = scene_version.formatted
     cleaned_text = clean_screenplay_text(screenplay,app.config['API_KEY'])
     
     
