@@ -305,13 +305,13 @@ def score_screenplay_route(scene_id):
     screenplay = scene_version.content
     score = json.loads(rate_screenplay(screenplay, app.config['API_KEY']))
     scene.plot = score["Plot"] or 0
-    scene.character_development = score["Character Development"] or 0
+    scene.character_development = score["CharacterDevelopment"] or 0
     scene.dialogue = score["Dialogue"] or 0
     scene.originality = score["Originality"] or 0
     scene.theme = score["Theme"] or 0
     db.session.commit()
     print(score, type(score))
-    return {"message": "Successfully scored", "Plot": scene.plot, "Character Development": scene.character_development, "Dialogue": scene.dialogue, "Originality": scene.originality, "Theme": scene.theme}
+    return {"message": "Successfully scored", "Plot": scene.plot, "CharacterDevelopment": scene.character_development, "Dialogue": scene.dialogue, "Originality": scene.originality, "Theme": scene.theme}
 
 @app.route('/api/get_score/scene/<int:scene_id>', methods=['GET'])
 @jwt_required()
@@ -322,7 +322,7 @@ def get_score(scene_id):
         return jsonify({"message": "User not found"}), 404
 
     scene = db.session.get(Scene, scene_id)
-    return {"scores": {"Plot": scene.plot or 0, "Character Development": scene.character_development  or 0, "Dialogue": scene.dialogue  or 0, "Originality": scene.originality  or 0, "Theme": scene.theme  or 0}}
+    return {"scores": {"Plot": scene.plot or 0, "CharacterDevelopment": scene.character_development  or 0, "Dialogue": scene.dialogue  or 0, "Originality": scene.originality  or 0, "Theme": scene.theme  or 0}}
 
 @app.route('/api/summarize_screenplay/scene/<int:scene_id>', methods=['POST'])
 @jwt_required()
