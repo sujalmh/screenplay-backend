@@ -333,7 +333,8 @@ def summarize_screenplay_route(scene_id):
         return jsonify({"message": "User not found"}), 404
 
     scene = db.session.get(Scene, scene_id)
-    screenplay = scene.formatted
+    scene_version = db.session.get(SceneVersion, scene.current_version_id)
+    screenplay = scene_version.formatted
     summary = summarize_screenplay(screenplay, app.config['API_KEY'])
     return summary
 
