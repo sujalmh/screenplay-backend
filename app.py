@@ -140,7 +140,7 @@ def create_scene(story_id):
 
     data = request.get_json()
     scene_title = data.get('title')
-    scene_content = data.get('content')
+    scene_content = data.get('transcript')
 
     if not scene_title or not scene_content:
         return jsonify({'error': 'Scene title and content are required'}), 400
@@ -152,10 +152,11 @@ def create_scene(story_id):
     new_scene = Scene(story_id=story_id)
     db.session.add(new_scene)
     db.session.flush()
-
+    screenplay = convert_to_screenplay(scene_content, app.config['API_KEY'])
     initial_version = SceneVersion(
         scene_id=new_scene.id,
         version_number=1,
+        formatted = screenplay,
         title=scene_title,
         content=scene_content
     )
@@ -184,12 +185,11 @@ def edit_scene_formatted(story_id, scene_id):
         return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
-    scene_title = data.get('title')
-    scene_formatted = data.get('content')
+    scene_formatted = data.get('transcript')
 
     scene = db.session.get(Scene, scene_id)
 
-    if not scene_title or not scene_formatted:
+    if not scene_formatted:
         return jsonify({'error': 'Scene title and content are required'}), 400
 
     story = db.session.get(Story, story_id)
@@ -199,7 +199,7 @@ def edit_scene_formatted(story_id, scene_id):
     new_version = SceneVersion(
         scene_id=scene_id,
         version_number=scene.current_version_id+1,
-        title=scene_title,
+        title="Scene 1",
         content=scene.content,
         formatted=scene_formatted
     )
@@ -244,17 +244,18 @@ def edit_scene_text(scene_id):
         return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
+    scene_title = data.get('title')
     scene_content = ''.join(data.get('transcript'))
     scene = db.session.get(Scene, scene_id)
 
-    if not scene_content:
+    if not scene_title or not scene_content:
         return jsonify({'error': 'Scene title and content are required'}), 400
     screenplay = convert_to_screenplay(scene_content, app.config['API_KEY'])
 
     new_version = SceneVersion(
         scene_id=scene_id,
         version_number=scene.current_version_id+1,
-        title="Scene",
+        title=scene_title,
         formatted = screenplay,
         content=scene_content
     )

@@ -94,8 +94,9 @@ def convert_to_screenplay(screenplay_content, api_key):
     - <character> for character names
     - <parenthesis> for parentheticals (like voiceovers, actions)
     - <dialogue> for dialogue
+    - <quote> for quote
     - <shot> for shot
-    Ensure each tag has both an opening and a closing tag.
+    Ensure each tag has both an opening and a closing tag. wrap dialogue tag around character and parathesis.
     """
     
     try:
@@ -113,12 +114,12 @@ For a while it seemed that they wouldn't even hear the wedding, let alone see it
 <sub-heading>INSIDE THE VAN</sub-heading>
 <shot>Camera zooms in on Adejo's face.</shot>
 <action>Adejo, a young boy, looks confused. His Uncle, a middle-aged man, is at the wheel.</action>
-<character>ADEJO</character>
+<dialogue><character>ADEJO</character>
 <parenthesis>(voiceover)</parenthesis>
-<dialogue>I still wasn't quite sure how my uncle had got caught up with the two wedding guests in the first place.</dialogue>
+<quote>I still wasn't quite sure how my uncle had got caught up with the two wedding guests in the first place.</quote></dialogue>
 <action>Adejo's Uncle turns to him, a serious look on his face.</action>
-<character>UNCLE</character>
-<dialogue>We're just going to the kitchen, to pick up the bags. We won't even see the wedding.</dialogue>
+<dialogue><character>UNCLE</character>
+<quote>We're just going to the kitchen, to pick up the bags. We won't even see the wedding.</quote></dialogue>
 <action>The van pulls up to a steel door. His uncle starts pressing numbers into the keypad, but the door won't open.</action>
 """},
                 {"role": "user", "content": screenplay_content}
