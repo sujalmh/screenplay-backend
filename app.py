@@ -305,7 +305,7 @@ def score_screenplay_route(scene_id):
     screenplay = scene_version.content
     score = json.loads(rate_screenplay(screenplay, app.config['API_KEY']))
     scene.plot = score["Plot"] or 0
-    scene.character_development = score["CharacterDevelopment"] or 0
+    scene.character_development = score["Character Development"] or 0
     scene.dialogue = score["Dialogue"] or 0
     scene.originality = score["Originality"] or 0
     scene.theme = score["Theme"] or 0
