@@ -1,4 +1,4 @@
-from flask import Flask, session, request, jsonify
+from flask import Flask, session, request, jsonify, url_for
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -11,6 +11,8 @@ import json
 import os
 from pytz import timezone
 import emoji
+import string 
+import random
 
 load_dotenv()
 
@@ -338,9 +340,11 @@ def summarize_screenplay_route(scene_id):
     summary = summarize_screenplay(screenplay, app.config['API_KEY'])
     return summary
 
-@app.route('/api/scene_to_voice', methods=['POST'])
+@app.route('/api/scene_to_voice', methods=['GET'])
 @jwt_required()
-def scene_to_voice_route():
+def scene_to_voice_route(save_directory='static/generated_audios/'):
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
     if not user:
@@ -349,9 +353,15 @@ def scene_to_voice_route():
     data = request.get_json()
     screenplay = data.get('screenplay')
     cleaned_text = clean_screenplay_text(screenplay,app.config['API_KEY'])
-    convert_text_to_speech2(cleaned_text, "C:/Users/Acer/Desktop/screenplay_audio3.mp3")
+    
+    
+    res = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7))
+    filename = "{}.mp3".format(res)
+    audio_path = os.path.join(save_directory, filename)
+    convert_text_to_speech2(cleaned_text, audio_path)
+    saved_audio_url = url_for('static', filename=f'generated_audios/{filename}', _external=True)
 
-    return jsonify({"asbcd": "abacd"})
+    return saved_audio_url
 
 @app.route('/api/sentiment_analysis/scene/<int:scene_id>', methods=['POST'])
 @jwt_required()
