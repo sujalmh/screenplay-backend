@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 import json
 import os
 from pytz import timezone
+import emoji
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -233,31 +235,27 @@ def get_scene_formatted(scene_id):
     }), 201
 
 
-@app.route('/api/story/<int:story_id>/edit_scene_text/<int:scene_id>', methods=['POST'])
+@app.route('/api/edit_scene_text/<int:scene_id>', methods=['POST'])
 @jwt_required()
-def edit_scene_text(story_id, scene_id):
+def edit_scene_text(scene_id):
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
     if not user:
         return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
-    scene_title = data.get('title')
-    scene_content = data.get('content')
-
+    scene_content = ''.join(data.get('transcript'))
     scene = db.session.get(Scene, scene_id)
 
-    if not scene_title or not scene_content:
+    if not scene_content:
         return jsonify({'error': 'Scene title and content are required'}), 400
-
-    story = db.session.get(Story, story_id)
-    if not story:
-        return jsonify({'error': 'Story not found'}), 404
+    screenplay = convert_to_screenplay(scene_content, app.config['API_KEY'])
 
     new_version = SceneVersion(
         scene_id=scene_id,
         version_number=scene.current_version_id+1,
-        title=scene_title,
+        title="Scene",
+        formatted = screenplay,
         content=scene_content
     )
     db.session.add(new_version)
@@ -368,7 +366,7 @@ def sentiment_analysis_route(scene_id):
     emoji_list = []
     emojiNames_list = []
     for emoji_dict in scene_emoji:
-        emoji_list.append(emoji_dict["emoji"].encode("utf-8").decode('utf-8'))
+        emoji_list.append(emoji.emojize(emoji_dict["emoji"]))
         emojiNames_list.append(emoji_dict["name"])
     scene.emoji = emoji_list
     scene.emoji_name = emojiNames_list
@@ -386,7 +384,8 @@ def get_sentiment_analysis(scene_id):
     scene = db.session.get(Scene, scene_id)
     emojis_data=[]
     for i in range(len(scene.emoji)):
-        emojis_data.append({"emoji": scene.emoji[i], "emoji_name": scene.emoji_name[i]})  
+        print(scene.emoji[i])
+        emojis_data.append({"emoji": emoji.emojize(scene.emoji[i]), "emoji_name": scene.emoji_name[i]})  
     return jsonify({"emoji_data": emojis_data, "desc": scene.sentiment_desc})
 
 @app.route('/api/generate_summary/scene/<int:scene_id>', methods=['POST'])
@@ -427,7 +426,6 @@ def chat():
         return jsonify({"message": "User not found"}), 404
     data = request.get_json()
     user_input = data.get('userInput')
-    print(user_input)
     return chatbot_chat(current_user_id, user_input, app.config['API_KEY'])
 
 @app.route('/api/get_chat', methods=['GET'])

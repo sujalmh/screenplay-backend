@@ -179,7 +179,7 @@ def get_sentimental_analysis(screenplay, api_key):
                                                         Let it be in JSON format. Just start and end with flower brackets.
                                                     """},
                     {"role": "user", "content": "<action>Adejo's Uncle turns to him, an angry look on his face. His uncle looked at him confused</action>"},
-                    { "role": "assistant", "content": '{"emojies": [{"name": "Angry face", "emoji": "\\U0001f620"},{"name": "Confused face", "emoji": "\\U0001f615"}], "description": "The scene is tense as uncle is angered by Adejo"}'},
+                    { "role": "assistant", "content": '{"emojies": [{"name": "Angry face", "emoji": ":angry_face:"},{"name": "Confused face", "emoji": ":angry_face:",{"name": "Nervous face", emoji=":anxious_face_with_sweat:"}], "description": "The scene is tense as uncle is angered by Adejo"}'},
                     {"role": "user", "content": screenplay}
                 ],
                 model ="gpt-4o",
